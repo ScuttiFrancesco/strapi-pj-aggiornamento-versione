@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_layout_articolos",
+  "info": {
+    "displayName": "articolo",
+    "icon": "file"
+  },
+  "options": {},
+  "attributes": {
+    "contenuto": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
+    }
+  },
+  "config": {}
+}

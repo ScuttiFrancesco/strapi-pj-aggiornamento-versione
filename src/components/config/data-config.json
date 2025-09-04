@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_config_data_configs",
+  "info": {
+    "displayName": "data-config"
+  },
+  "options": {},
+  "attributes": {
+    "tipoLayout": {
+      "type": "enumeration",
+      "enum": [
+        "tabella",
+        "pagina"
+      ]
+    },
+    "columns": {
+      "type": "component",
+      "component": "config.column",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

@@ -1,0 +1,114 @@
+{
+  "kind": "collectionType",
+  "collectionName": "comunicati_stampas",
+  "info": {
+    "singularName": "comunicati-stampa",
+    "pluralName": "comunicati-stampas",
+    "displayName": "Comunicati Stampa"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "_softDeletedAt": {
+      "type": "datetime",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedById": {
+      "type": "integer",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedByType": {
+      "type": "string",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "new_editor": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
+    },
+    "titolo": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "titolo"
+    },
+    "composizioneTitolo": {
+      "type": "customField",
+      "customField": "plugin::multi-select.multi-select",
+      "default": "[titolo]",
+      "options": [
+        "titolo",
+        "data",
+        "comune",
+        "fonte",
+        "fontePrefisso"
+      ]
+    },
+    "contenuto": {
+      "type": "richtext"
+    },
+    "configuratore": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::configuratore.configuratore"
+    },
+    "normael": {
+      "type": "blocks"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "tag": {
+      "type": "customField",
+      "customField": "plugin::tagsinput.tags"
+    },
+    "coloreTitolo": {
+      "type": "customField",
+      "customField": "plugin::color-picker.color",
+      "regex": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    },
+    "tagga": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::tag.tag",
+      "mappedBy": "comunicati_stampa"
+    },
+    "json": {
+      "type": "json"
+    },
+    "altro_editor": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultMarkdown"
+      }
+    },
+    "comunicati_stampa": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::comunicati-stampa.comunicati-stampa"
+    }
+  }
+}

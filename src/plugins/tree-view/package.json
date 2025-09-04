@@ -1,0 +1,17 @@
+{
+  "name": "strapi-plugin-tree-view",
+  "version": "0.1.0",
+  "description": "Local tree view plugin for hierarchical self-referential content-types",
+  "strapi": {
+    "name": "tree-view",
+    "displayName": "Tree View",
+    "description": "Visual tree explorer for self-referential content-types",
+    "kind": "plugin",
+    "admin": {
+      "src": "./strapi-admin.ts"
+    }
+  },
+  "main": "strapi-server.js",
+  "keywords": ["strapi", "plugin", "tree", "hierarchy"],
+  "license": "MIT"
+}

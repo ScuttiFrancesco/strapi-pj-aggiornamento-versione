@@ -1,0 +1,6 @@
+{
+  "name": "strapi-admin-tree-view",
+  "private": true,
+  "version": "0.1.0",
+  "main": "src/index.tsx"
+}

@@ -1,0 +1,61 @@
+{
+  "kind": "collectionType",
+  "collectionName": "offices",
+  "info": {
+    "singularName": "office",
+    "pluralName": "offices",
+    "displayName": "Office"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "_softDeletedAt": {
+      "type": "datetime",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedById": {
+      "type": "integer",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedByType": {
+      "type": "string",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "name": {
+      "type": "string"
+    },
+    "copertina": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files"
+      ]
+    },
+    "pagina": {
+      "type": "dynamiczone",
+      "components": [
+        "postazioni.postazione1",
+        "postazioni.postazione2"
+      ],
+      "max": 3
+    },
+    "rich": {
+      "type": "richtext"
+    },
+    "new": {
+      "type": "blocks"
+    }
+  }
+}

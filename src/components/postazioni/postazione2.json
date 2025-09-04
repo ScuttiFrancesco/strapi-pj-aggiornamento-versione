@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_postazioni_postazione2s",
+  "info": {
+    "displayName": "postazione2"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "img": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    }
+  },
+  "config": {}
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "singleType",
+  "collectionName": "header_bars",
+  "info": {
+    "singularName": "header-bar",
+    "pluralName": "header-bars",
+    "displayName": "Header-Bar"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "_softDeletedAt": {
+      "type": "datetime",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedById": {
+      "type": "integer",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedByType": {
+      "type": "string",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "dynamic": {
+      "type": "dynamiczone",
+      "components": [
+        "config.data-config"
+      ]
+    },
+    "titolo": {
+      "type": "string"
+    }
+  }
+}

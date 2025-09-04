@@ -2,8 +2,9 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "lib": ["ES2020"],
+  "lib": ["ES2020", "DOM"],
     "target": "ES2019",
+  "jsx": "react-jsx",
     "strict": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -37,7 +38,8 @@
     "src/admin/",
     // Do not include test files
     "**/*.test.*",
-    // Do not include plugins in the server compilation
-    "src/plugins/**"
+  // Do not include plugin server code in root build (handled at runtime), allow admin entrypoint
+  "src/plugins/**/server/**",
+  "src/plugins/**/strapi-server.*"
   ]
 }

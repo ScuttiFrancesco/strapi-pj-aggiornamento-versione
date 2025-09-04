@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_postazioni_postazione1s",
+  "info": {
+    "displayName": "postazione1"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "data": {
+      "type": "date"
+    },
+    "dddd": {
+      "type": "component",
+      "component": "postazioni.postazione2",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

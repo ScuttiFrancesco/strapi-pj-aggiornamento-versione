@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_layout_solo_testos",
+  "info": {
+    "displayName": "solo testo"
+  },
+  "options": {},
+  "attributes": {
+    "titolo": {
+      "type": "string"
+    },
+    "contenuto": {
+      "type": "blocks"
+    }
+  },
+  "config": {}
+}

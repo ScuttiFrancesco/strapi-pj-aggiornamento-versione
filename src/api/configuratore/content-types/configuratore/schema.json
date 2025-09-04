@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "configuratores",
+  "info": {
+    "singularName": "configuratore",
+    "pluralName": "configuratores",
+    "displayName": "Configuratore"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "_softDeletedAt": {
+      "type": "datetime",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedById": {
+      "type": "integer",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "_softDeletedByType": {
+      "type": "string",
+      "configurable": false,
+      "writable": false,
+      "visible": false,
+      "private": true
+    },
+    "configuratore": {
+      "type": "component",
+      "component": "config.data-config",
+      "repeatable": false
+    }
+  }
+}

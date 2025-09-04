@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_config_columns",
+  "info": {
+    "displayName": "column"
+  },
+  "options": {},
+  "attributes": {
+    "etichetta": {
+      "type": "string",
+      "required": true
+    },
+    "isVisibile": {
+      "type": "boolean"
+    },
+    "tipo": {
+      "type": "enumeration",
+      "enum": [
+        "text",
+        "data",
+        "data-ora",
+        "file"
+      ]
+    }
+  },
+  "config": {}
+}
