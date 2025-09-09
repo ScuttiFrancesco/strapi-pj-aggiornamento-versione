@@ -599,7 +599,7 @@ export interface ApiPaginaPagina extends Struct.CollectionTypeSchema {
       ['layout.titolo', 'layout.articolo']
     >;
     blocco_contenuto: Schema.Attribute.DynamicZone<
-      ['layout.articolo', 'layout.titolo']
+      ['layout.articolo', 'layout.titolo', 'config.tabella']
     >;
     composizioneTitolo: Schema.Attribute.JSON &
       Schema.Attribute.CustomField<

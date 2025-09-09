@@ -39,7 +39,8 @@
       "type": "dynamiczone",
       "components": [
         "layout.articolo",
-        "layout.titolo"
+        "layout.titolo",
+        "config.tabella"
       ]
     },
     "barra_superiore": {

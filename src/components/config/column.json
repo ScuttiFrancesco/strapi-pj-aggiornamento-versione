@@ -9,7 +9,7 @@
       "type": "string",
       "required": true
     },
-    "isVisibile": {
+    "isCliccabile": {
       "type": "boolean"
     },
     "tipo": {
@@ -19,6 +19,21 @@
         "data",
         "data-ora",
         "file"
+      ]
+    },
+    "nomeColonna": {
+      "type": "string"
+    },
+    "composizioneColonnaMulti": {
+      "type": "customField",
+      "customField": "plugin::multi-select.multi-select",
+      "default": "[]",
+      "options": [
+        "data",
+        "titolo",
+        "comune",
+        "fonte",
+        "descrizione"
       ]
     }
   },

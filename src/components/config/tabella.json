@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_config_tabellas",
+  "info": {
+    "displayName": "tabella"
+  },
+  "options": {},
+  "attributes": {
+    "columns": {
+      "type": "component",
+      "component": "config.column",
+      "repeatable": true,
+      "required": true,
+      "default": [
+        {
+          "etichetta": "data",
+          "isCliccabile": false,
+          "tipo": "data",
+          "nomeColonna": "Data",
+          "composizioneColonnaMulti": "[\"data\"]"
+        },
+        {
+          "etichetta": "titolo",
+          "isCliccabile": false,
+          "tipo": "text",
+          "nomeColonna": "Titolo",
+          "composizioneColonnaMulti": "[\"titolo\",\"data\"]"
+        }
+      ]
+    }
+  },
+  "config": {}
+}

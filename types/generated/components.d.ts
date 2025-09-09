@@ -6,8 +6,15 @@ export interface ConfigColumn extends Struct.ComponentSchema {
     displayName: 'column';
   };
   attributes: {
+    composizioneColonnaMulti: Schema.Attribute.JSON &
+      Schema.Attribute.CustomField<
+        'plugin::multi-select.multi-select',
+        ['data', 'titolo', 'comune', 'fonte', 'descrizione']
+      > &
+      Schema.Attribute.DefaultTo<'[]'>;
     etichetta: Schema.Attribute.String & Schema.Attribute.Required;
-    isVisibile: Schema.Attribute.Boolean;
+    isCliccabile: Schema.Attribute.Boolean;
+    nomeColonna: Schema.Attribute.String;
     tipo: Schema.Attribute.Enumeration<['text', 'data', 'data-ora', 'file']>;
   };
 }
@@ -20,6 +27,35 @@ export interface ConfigDataConfig extends Struct.ComponentSchema {
   attributes: {
     columns: Schema.Attribute.Component<'config.column', true>;
     tipoLayout: Schema.Attribute.Enumeration<['tabella', 'pagina']>;
+  };
+}
+
+export interface ConfigTabella extends Struct.ComponentSchema {
+  collectionName: 'components_config_tabellas';
+  info: {
+    displayName: 'tabella';
+  };
+  attributes: {
+    columns: Schema.Attribute.Component<'config.column', true> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<
+        [
+          {
+            composizioneColonnaMulti: '["data"]';
+            etichetta: 'data';
+            isCliccabile: false;
+            nomeColonna: 'Data';
+            tipo: 'data';
+          },
+          {
+            composizioneColonnaMulti: '["titolo","data"]';
+            etichetta: 'titolo';
+            isCliccabile: false;
+            nomeColonna: 'Titolo';
+            tipo: 'text';
+          },
+        ]
+      >;
   };
 }
 
@@ -89,6 +125,7 @@ declare module '@strapi/strapi' {
     export interface ComponentSchemas {
       'config.column': ConfigColumn;
       'config.data-config': ConfigDataConfig;
+      'config.tabella': ConfigTabella;
       'layout.articolo': LayoutArticolo;
       'layout.solo-testo': LayoutSoloTesto;
       'layout.titolo': LayoutTitolo;
