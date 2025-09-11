@@ -1,7 +1,13 @@
 import React from 'react';
 import { TreeNode, TreeNodeData } from './TreeNode';
 
-export const TreeView: React.FC<{ data: TreeNodeData[] }> = ({ data }) => {
+export interface TreeViewProps {
+  data: TreeNodeData[];
+  contentType?: string;
+  parentField?: string;
+}
+
+export const TreeView: React.FC<TreeViewProps> = ({ data, contentType, parentField }) => {
   return (
     <div style={{ 
       fontFamily: 'Arial, sans-serif', 
@@ -24,9 +30,30 @@ export const TreeView: React.FC<{ data: TreeNodeData[] }> = ({ data }) => {
           Nessun elemento trovato o nessuna struttura gerarchica disponibile.
         </div>
       ) : (
-        data.map((n) => (
-          <TreeNode key={n.id} node={n} level={0} />
-        ))
+        <>
+          {contentType && (
+            <div style={{
+              marginBottom: '16px',
+              padding: '8px 12px',
+              backgroundColor: '#e3f2fd',
+              border: '1px solid #2196f3',
+              borderRadius: '4px',
+              fontSize: '14px',
+              color: '#1565c0'
+            }}>
+              <strong>💡 Suggerimento:</strong> Clicca sul bottone "Aggiungi" accanto a qualsiasi nodo per creare un nuovo elemento figlio.
+            </div>
+          )}
+          {data.map((n) => (
+            <TreeNode 
+              key={n.id} 
+              node={n} 
+              level={0} 
+              contentType={contentType}
+              parentField={parentField}
+            />
+          ))}
+        </>
       )}
     </div>
   );

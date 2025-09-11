@@ -1,6 +1,8 @@
+import React from 'react';
 import pluginId from './pluginId';
 import { getTranslation } from './utils/getTrad';
 import PluginIcon from './pluginIcon';
+import ParentHelper from './components/ParentHelper';
 
 const plugin = {
   register(app: any) {
@@ -19,9 +21,48 @@ const plugin = {
       permissions: [],
     });
   },
-  bootstrap() {
+  bootstrap(app: any) {
     // eslint-disable-next-line no-console
     console.log('%c[tree-view] admin bootstrap()', 'color:#6c5ce7');
+    
+    // Aggiungi il ParentHelper globalmente
+    const renderParentHelper = () => {
+      // Crea un contenitore per il ParentHelper se non esiste
+      let helperContainer = document.getElementById('tree-view-parent-helper');
+      if (!helperContainer) {
+        helperContainer = document.createElement('div');
+        helperContainer.id = 'tree-view-parent-helper';
+        document.body.appendChild(helperContainer);
+      }
+      
+      // Render del componente
+      import('react-dom').then(({ render }) => {
+        render(React.createElement(ParentHelper), helperContainer);
+      });
+    };
+    
+    // Render immediato e ogni volta che cambia la route
+    renderParentHelper();
+    
+    // Ascolta i cambi di route per re-renderizzare il helper
+    if (typeof window !== 'undefined') {
+      const originalPushState = history.pushState;
+      const originalReplaceState = history.replaceState;
+      
+      history.pushState = function(...args) {
+        originalPushState.apply(history, args);
+        setTimeout(renderParentHelper, 100);
+      };
+      
+      history.replaceState = function(...args) {
+        originalReplaceState.apply(history, args);
+        setTimeout(renderParentHelper, 100);
+      };
+      
+      window.addEventListener('popstate', () => {
+        setTimeout(renderParentHelper, 100);
+      });
+    }
   },
   async registerTrads(app: any) {
     const importedTrads = await Promise.all(

@@ -255,7 +255,11 @@ const App: React.FC = () => {
         ) : data.length === 0 ? (
           <div>Nessun nodo trovato. {query.contentType ? 'Prova a verificare che ci siano dati nella collection.' : 'Seleziona un content type per iniziare.'}</div>
         ) : (
-          <TreeView data={data} />
+          <TreeView 
+            data={data} 
+            contentType={query.contentType}
+            parentField={query.parentField}
+          />
         )}
       </div>
     </div>

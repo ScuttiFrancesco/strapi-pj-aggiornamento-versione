@@ -11,6 +11,13 @@ export interface TreeNodeData {
   raw?: any;
 }
 
+export interface TreeNodeProps {
+  node: TreeNodeData;
+  level?: number;
+  contentType?: string;
+  parentField?: string;
+}
+
 const indent = (level: number, borderColor?: string) => ({ 
   paddingLeft: `${level * 40}px`,
   borderLeft: level > 0 ? `3px solid ${borderColor || '#dee2e6'}` : 'none',
@@ -41,10 +48,37 @@ const getLevelColors = (level: number, hasChildren: boolean) => {
   };
 };
 
-export const TreeNode: React.FC<{ node: TreeNodeData; level?: number }> = ({ node, level = 0 }) => {
+export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType, parentField }) => {
   const [open, setOpen] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
   const levelColors = getLevelColors(level, hasChildren);
+  
+  // Funzione per navigare alla creazione di una nuova entry
+  const handleAddChild = () => {
+    if (!contentType) return;
+    
+    // Salva le informazioni del parent nel sessionStorage per essere usate dalla pagina di creazione
+    const parentInfo = {
+      parentId: node.id,
+      parentLabel: node.label,
+      parentField: parentField || 'pagina', // Default per la collection pagina
+      contentType: contentType,
+      timestamp: Date.now()
+    };
+    
+    sessionStorage.setItem('strapi_tree_parent_info', JSON.stringify(parentInfo));
+    
+    // Costruisci l'URL per la creazione di una nuova entry
+    const createUrl = `/admin/content-manager/collection-types/${contentType}/create`;
+    
+    // Apri in una nuova tab
+    window.open(createUrl, '_blank');
+    
+    // Mostra un messaggio di conferma
+    setTimeout(() => {
+      alert(`Aperta pagina di creazione per aggiungere un figlio a "${node.label}".\n\nRicordati di selezionare "${node.label}" nel campo "${parentField || 'pagina'}" per creare la relazione parent-child.`);
+    }, 500);
+  };
   
   return (
     <div style={{ marginBottom: '6px' }}>
@@ -86,15 +120,45 @@ export const TreeNode: React.FC<{ node: TreeNodeData; level?: number }> = ({ nod
           fontFamily: 'Arial, sans-serif', 
           fontSize: '16px',
           fontWeight: '600', // Sempre grassetto per tutti
-          color: levelColors.color
+          color: levelColors.color,
+          flex: 1
         }}>
           {node.label}
         </span>
+        
+        {/* Bottone per aggiungere un figlio */}
+        {contentType && (
+          <button
+            type="button"
+            onClick={handleAddChild}
+            style={{
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              marginLeft: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              opacity: 0.8,
+              transition: 'opacity 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+            title={`Aggiungi figlio a "${node.label}"`}
+          >
+            <span style={{ fontSize: '14px' }}>+</span>
+            <span>Aggiungi</span>
+          </button>
+        )}
       </div>
       {open && hasChildren && (
         <div>
           {node.children!.map((c) => (
-            <TreeNode key={c.id} node={c} level={level + 1} />
+            <TreeNode key={c.id} node={c} level={level + 1} contentType={contentType} parentField={parentField} />
           ))}
         </div>
       )}
