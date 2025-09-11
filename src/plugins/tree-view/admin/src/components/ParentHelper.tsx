@@ -11,7 +11,7 @@ export interface ParentInfo {
 export const ParentHelper: React.FC = () => {
   const [parentInfo, setParentInfo] = useState<ParentInfo | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'manual'>('loading');
 
   // Funzione per inserire automaticamente il parent nel campo relazione
   const autoFillRelationField = async (info: ParentInfo) => {
@@ -36,12 +36,16 @@ export const ParentHelper: React.FC = () => {
       
       console.log('❌ Dati parent non trovati, fallback al metodo click');
       const success = await fallbackClickMethod(info);
-      setStatus(success ? 'success' : 'error');
+      if (!success) {
+        setStatus('manual'); // Nuovo stato per indicare selezione manuale
+      } else {
+        setStatus('success');
+      }
       
     } catch (error) {
       console.error('❌ Errore nell\'auto-compilazione:', error);
       const success = await fallbackClickMethod(info);
-      setStatus(success ? 'success' : 'error');
+      setStatus(success ? 'success' : 'manual');
     }
   };
 
@@ -80,92 +84,47 @@ export const ParentHelper: React.FC = () => {
       const relationField = document.querySelector('input[name="pagina"][role="combobox"]') as HTMLInputElement;
       
       if (relationField) {
-        console.log('🎯 Tentativo di impostare relazione via typing e attesa');
+        console.log('🎯 Usando strategia diretta senza dropdown');
         
         const parentLabel = parentData.attributes?.titolo || parentData.attributes?.title || info.parentLabel;
-        console.log('📝 Parent label da cercare:', parentLabel);
+        const parentId = parentData.documentId || parentData.id;
+        console.log('📝 Parent label:', parentLabel, 'ID:', parentId);
         
-        // Focus e svuota il campo
-        relationField.focus();
-        relationField.value = '';
+        // Strategia diretta: Imposta il valore senza mai attivare il dropdown
+        console.log('🔧 Impostazione diretta del valore...');
+        
+        // Imposta il valore direttamente
+        relationField.value = parentLabel;
+        
+        // Cerca campi correlati
+        const hiddenField = relationField.parentElement?.querySelector('input[type="hidden"]') as HTMLInputElement;
+        const displayField = relationField.closest('div')?.querySelector('input[readonly]') as HTMLInputElement;
+        
+        if (hiddenField) {
+          hiddenField.value = parentId.toString();
+          console.log('✅ Campo hidden impostato');
+        }
+        
+        if (displayField) {
+          displayField.value = parentLabel;
+          console.log('✅ Campo display impostato');
+        }
+        
+        // Trigger solo evento di input minimale
         relationField.dispatchEvent(new Event('input', { bubbles: true }));
-        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Digita il testo del parent per attivare il filtro di ricerca
-        console.log('⌨️ Digitando il testo per attivare la ricerca...');
-        for (const char of parentLabel) {
-          relationField.value += char;
-          relationField.dispatchEvent(new Event('input', { bubbles: true }));
-          relationField.dispatchEvent(new Event('keyup', { bubbles: true }));
-          await new Promise(resolve => setTimeout(resolve, 100));
+        // Attendi stabilizzazione
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Verifica se funziona
+        if (relationField.value === parentLabel || displayField?.value === parentLabel) {
+          console.log('✅ Strategia diretta riuscita!');
+          setTimeout(() => handleDismiss(), 2000);
+          return true;
         }
         
-        console.log('⏳ Aspettando che le opzioni si carichino...');
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Cerca le opzioni nel dropdown che si apre dopo il typing
-        // Usa diversi selettori possibili per il dropdown
-        const dropdownSelectors = [
-          '[role="listbox"]',
-          '[role="combobox"] + div [role="option"]',
-          '.react-select__menu [role="option"]',
-          '[data-testid="combobox-option"]',
-          'div[id*="react-select"] [role="option"]'
-        ];
-        
-        let options: Element[] = [];
-        for (const selector of dropdownSelectors) {
-          options = Array.from(document.querySelectorAll(selector));
-          if (options.length > 0) {
-            console.log(`� Trovate ${options.length} opzioni con selettore: ${selector}`);
-            break;
-          }
-        }
-        
-        if (options.length === 0) {
-          console.log('❌ Nessuna opzione trovata con tutti i selettori, provo click diretto');
-          // Prova a premere Enter per selezionare la prima opzione
-          relationField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Verifica se il valore è stato impostato
-          if (relationField.value === parentLabel) {
-            console.log('✅ Relazione impostata con Enter!');
-            setTimeout(() => handleDismiss(), 2000);
-            return true;
-          }
-          return false;
-        }
-        
-        // Cerca l'opzione corrispondente
-        console.log('🔍 Cercando opzione corrispondente...');
-        for (const option of options) {
-          const optionText = option.textContent?.trim();
-          console.log(`📋 Opzione: "${optionText}"`);
-          
-          if (optionText && 
-              (optionText === parentLabel || 
-               optionText.toLowerCase() === parentLabel.toLowerCase() ||
-               optionText.includes(parentLabel) || 
-               parentLabel.includes(optionText))) {
-            
-            console.log('✅ Opzione corrispondente trovata, cliccando...');
-            (option as HTMLElement).click();
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Verifica che il valore sia stato impostato
-            const fieldValue = relationField.value || relationField.getAttribute('value');
-            console.log('🔍 Valore campo dopo click:', fieldValue);
-            
-            if (fieldValue && fieldValue.includes(parentLabel)) {
-              console.log('✅ Relazione impostata correttamente!');
-              setTimeout(() => handleDismiss(), 2000);
-              return true;
-            }
-          }
-        }
-        
-        console.log('❌ Opzione corrispondente non trovata nelle opzioni disponibili');
+        console.log('❌ Strategia diretta fallita, resetto campo');
+        await resetRelationField(relationField);
         return false;
       }
       
@@ -173,6 +132,42 @@ export const ParentHelper: React.FC = () => {
     } catch (error) {
       console.error('Errore in setCompleteRelation:', error);
       return false;
+    }
+  };
+
+  // Funzione per resettare il campo relation e renderlo utilizzabile manualmente
+  const resetRelationField = async (relationField: HTMLInputElement) => {
+    try {
+      console.log('🔄 Resetting campo relation per uso manuale...');
+      
+      // Svuota il campo
+      relationField.value = '';
+      
+      // Rimuovi focus
+      relationField.blur();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Trigger di eventi per "resettare" lo stato interno
+      relationField.dispatchEvent(new Event('input', { bubbles: true }));
+      relationField.dispatchEvent(new Event('change', { bubbles: true }));
+      relationField.dispatchEvent(new Event('blur', { bubbles: true }));
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Re-enable il campo se era disabilitato
+      relationField.removeAttribute('disabled');
+      relationField.removeAttribute('readonly');
+      
+      console.log('✅ Campo relation resettato e pronto per uso manuale');
+      
+      // Aggiungi un messaggio per l'utente
+      const parentInfo = JSON.parse(sessionStorage.getItem('strapi_tree_parent_info') || '{}');
+      if (parentInfo.parentLabel) {
+        console.log(`💡 Suggerimento: Cerca manualmente "${parentInfo.parentLabel}" nel campo relation`);
+      }
+      
+    } catch (error) {
+      console.error('Errore durante reset campo relation:', error);
     }
   };
 
@@ -245,8 +240,12 @@ export const ParentHelper: React.FC = () => {
         return true;
       } else {
         console.log('❌ Parent non trovato nel dropdown');
-        // Mostra messaggio di errore
-        alert(`Non riesco a trovare "${info.parentLabel}" nella lista delle relazioni.\n\nSeleziona manualmente la relazione.`);
+        
+        // Reset del campo per uso manuale
+        await resetRelationField(relationField);
+        
+        // Mostra messaggio informativo invece di alert invasivo
+        console.log(`💡 Suggerimento: Seleziona manualmente "${info.parentLabel}" nel campo relation`);
         return false;
       }
     }
@@ -285,7 +284,7 @@ export const ParentHelper: React.FC = () => {
     sessionStorage.removeItem('strapi_tree_parent_info');
   };
 
-  if (!isVisible || !parentInfo || status === 'success') {
+  if (!isVisible || !parentInfo) {
     return null;
   }
 
@@ -306,7 +305,9 @@ export const ParentHelper: React.FC = () => {
       <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>
         🌳 Auto-compilazione da TreeView
         {status === 'loading' && ' ⏳'}
+        {status === 'success' && ' ✅'}
         {status === 'error' && ' ❌'}
+        {status === 'manual' && ' 🔧'}
       </div>
       <div style={{ marginBottom: '12px' }}>
         Impostando come parent:<br />
@@ -314,6 +315,16 @@ export const ParentHelper: React.FC = () => {
         {status === 'loading' && (
           <div style={{ marginTop: '8px', color: '#ffc107', fontSize: '12px' }}>
             Compilazione automatica in corso...
+          </div>
+        )}
+        {status === 'success' && (
+          <div style={{ marginTop: '8px', color: '#90EE90', fontSize: '12px' }}>
+            ✅ Relazione impostata automaticamente!
+          </div>
+        )}
+        {status === 'manual' && (
+          <div style={{ marginTop: '8px', color: '#87CEEB', fontSize: '12px' }}>
+            🔧 Campo pronto per selezione manuale. Clicca sul campo "pagina" qui sopra per selezionare.
           </div>
         )}
         {status === 'error' && (
@@ -404,46 +415,6 @@ export const ParentHelper: React.FC = () => {
           }}
         >
           Apri relazione
-        </button>
-        <button
-          onClick={() => {
-            // Debug: mostra informazioni sui campi disponibili
-            console.log('=== DEBUG CAMPI PAGINA ===');
-            
-            // Cerca label "pagina"
-            const labels = document.querySelectorAll('label');
-            labels.forEach(label => {
-              if (label.textContent?.toLowerCase().includes('pagina')) {
-                console.log('Label pagina trovato:', label);
-                console.log('Parent container:', label.closest('div'));
-                console.log('Input elements nearby:', label.closest('div')?.querySelectorAll('input, select, button, div[role="combobox"]'));
-              }
-            });
-            
-            // Cerca elementi con placeholder
-            const placeholders = document.querySelectorAll('*');
-            placeholders.forEach(el => {
-              const text = el.textContent?.toLowerCase() || '';
-              if (text.includes('add or create a relation') || text.includes('add or create')) {
-                console.log('Placeholder trovato:', el);
-                console.log('Element type:', el.tagName);
-                console.log('Element classes:', el.className);
-              }
-            });
-            
-            alert('Controlla la console per i dettagli del debug. Apri Developer Tools (F12).');
-          }}
-          style={{
-            background: 'rgba(255,255,255,0.7)',
-            color: '#ffc107',
-            border: '1px solid rgba(255,255,255,0.5)',
-            padding: '6px 12px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Debug
         </button>
         <button
           onClick={handleDismiss}

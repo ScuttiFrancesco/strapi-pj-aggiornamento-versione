@@ -145,6 +145,45 @@ const App: React.FC = () => {
     }
   };
 
+  // Funzione dedicata per auto-generazione al cambio select
+  const fetchTreeForContentType = async (contentType: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      params.set('contentType', contentType);
+      // Usa i valori correnti di parentField e labelField se disponibili
+      if (query.parentField) params.set('parentField', query.parentField);
+      if (query.labelField) params.set('labelField', query.labelField);
+      
+      const url = `/admin/plugins/tree-view/tree?${params.toString()}`;
+      console.log('🔍 Auto-fetching tree from:', url);
+      
+      const res = await fetch(url);
+      const responseText = await res.text();
+      
+      let json;
+      try {
+        json = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.error('❌ JSON parse error:', parseErr);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+      }
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${json.message || 'Unknown error'}`);
+      }
+      
+      setData(json.data || []);
+      console.log('✅ Auto-generated tree data loaded:', json.data?.length || 0, 'nodes');
+    } catch (e: any) {
+      console.error('❌ Error auto-fetching tree:', e);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchContentTypes();
   }, []);
@@ -154,7 +193,7 @@ const App: React.FC = () => {
   return (
     <div style={{ padding: '1.5rem', fontFamily: 'sans-serif' }}>
       <h2 style={{ margin: 0 }}>Tree View</h2>
-      <p style={{ marginTop: 4, color: '#666' }}>Visualizza gerarchie self-reference per qualsiasi collection</p>
+      <p style={{ marginTop: 4, color: '#666' }}>Visualizza gerarchie self-reference - L'albero viene generato automaticamente alla selezione</p>
       
       <div style={{ marginTop: '1.5rem', background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -166,7 +205,22 @@ const App: React.FC = () => {
                 <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#333' }}>Content Type:</label>
                 <select
                   value={query.contentType}
-                  onChange={(e) => setQuery(q => ({ ...q, contentType: e.target.value }))}
+                  onChange={(e) => {
+                    const newContentType = e.target.value;
+                    setQuery(q => ({ ...q, contentType: newContentType }));
+                    
+                    // Auto-genera l'albero quando viene selezionato un content type
+                    if (newContentType) {
+                      // Usa un piccolo delay per permettere l'aggiornamento dello state
+                      setTimeout(() => {
+                        fetchTreeForContentType(newContentType);
+                      }, 100);
+                    } else {
+                      // Se deseleziona, pulisci i dati
+                      setData([]);
+                      setError(null);
+                    }
+                  }}
                   style={{ padding: '6px 8px', border: '1px solid #ccc', borderRadius: 4, minWidth: '200px' }}
                 >
                   <option value="">Seleziona un content type...</option>
@@ -178,44 +232,18 @@ const App: React.FC = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#333' }}>Campo Parent (opzionale):</label>
-                <input
-                  name="parentField"
-                  placeholder="Auto-rilevato se vuoto"
-                  value={query.parentField}
-                  onChange={(e) => setQuery(q => ({ ...q, parentField: e.target.value }))}
-                  style={{ padding: '6px 8px', border: '1px solid #ccc', borderRadius: 4 }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#333' }}>Campo Label (opzionale):</label>
-                <input
-                  name="labelField"
-                  placeholder="Auto: title, titolo, name, label, id"
-                  value={query.labelField}
-                  onChange={(e) => setQuery(q => ({ ...q, labelField: e.target.value }))}
-                  style={{ padding: '6px 8px', border: '1px solid #ccc', borderRadius: 4 }}
-                />
-              </div>
-
-              <button
-                onClick={fetchTree}
-                disabled={loading || !query.contentType}
-                style={{
-                  padding: '8px 16px',
-                  background: query.contentType ? '#4945ff' : '#ccc',
-                  color: '#fff',
-                  border: 'none',
+              {loading && (
+                <div style={{ 
+                  padding: '8px 16px', 
+                  background: '#e3f2fd', 
+                  color: '#1565c0', 
                   borderRadius: 4,
-                  cursor: query.contentType ? 'pointer' : 'not-allowed',
-                  opacity: loading ? 0.6 : 1,
-                  marginTop: '18px',
-                }}
-              >
-                {loading ? 'Caricamento...' : 'Genera Albero'}
-              </button>
+                  fontSize: '14px',
+                  marginTop: '18px'
+                }}>
+                  🔄 Generazione albero in corso...
+                </div>
+              )}
 
               <button
                 onClick={testEndpoint}
@@ -227,7 +255,7 @@ const App: React.FC = () => {
                   borderRadius: 4,
                   cursor: 'pointer',
                   marginTop: '18px',
-                  marginLeft: '8px',
+                  marginLeft: 'auto',
                 }}
               >
                 🧪 Test Plugin

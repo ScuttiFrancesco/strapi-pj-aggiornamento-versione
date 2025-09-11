@@ -76,13 +76,26 @@ module.exports = {
       // Normalize to tree structure
       const nodes = entries.map((e) => {
         const parentValue = e[actualParentField];
-        const parentId = parentValue?.id || parentValue || null;
+        let parentId = null;
+        
+        // Gestione migliore delle relazioni parent
+        if (parentValue) {
+          if (typeof parentValue === 'object') {
+            // Se parentValue è un oggetto con dati completi
+            parentId = parentValue.documentId || parentValue.id;
+          } else {
+            // Se parentValue è un ID diretto (numerico o stringa)
+            parentId = parentValue;
+          }
+        }
+        
+        strapi.log.debug(`[tree-view] Node ${e.documentId || e.id} (${e[labelKey]}) has parent: ${parentId}`);
         
         return {
           id: e.documentId || e.id, // Usa documentId se disponibile, altrimenti id numerico
           numericId: e.id, // Mantieni l'id numerico per compatibilità
           documentId: e.documentId, // Aggiungi documentId esplicito
-          label: e[labelKey] ?? `#${e.id}`, // Rimuoviamo la visualizzazione dell'ID
+          label: e[labelKey] ?? `#${e.id}`,
           parent: parentId,
           children: [],
           raw: e,
@@ -93,12 +106,34 @@ module.exports = {
 
       // Build tree
       const byId = new Map();
-      nodes.forEach((n) => byId.set(n.id, n));
+      const byNumericId = new Map();
+      
+      // Popola le mappe con entrambi gli ID per gestire relazioni miste
+      nodes.forEach((n) => {
+        byId.set(n.id, n);
+        if (n.numericId) {
+          byNumericId.set(n.numericId, n);
+        }
+        if (n.documentId) {
+          byId.set(n.documentId, n);
+        }
+      });
+      
       const roots = [];
       
       nodes.forEach((n) => {
-        if (n.parent && byId.has(n.parent)) {
-          byId.get(n.parent).children.push(n);
+        if (n.parent) {
+          // Cerca il parent usando sia documentId che ID numerico
+          let parentNode = byId.get(n.parent) || byNumericId.get(n.parent);
+          
+          if (parentNode) {
+            parentNode.children.push(n);
+            strapi.log.debug(`[tree-view] Added ${n.label} as child of ${parentNode.label}`);
+          } else {
+            // Se il parent non è trovato, aggiungi ai root ma logga il warning
+            strapi.log.warn(`[tree-view] Parent ${n.parent} not found for node ${n.label}, adding to roots`);
+            roots.push(n);
+          }
         } else {
           roots.push(n);
         }
