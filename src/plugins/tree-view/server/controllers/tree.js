@@ -79,7 +79,9 @@ module.exports = {
         const parentId = parentValue?.id || parentValue || null;
         
         return {
-          id: e.id,
+          id: e.documentId || e.id, // Usa documentId se disponibile, altrimenti id numerico
+          numericId: e.id, // Mantieni l'id numerico per compatibilità
+          documentId: e.documentId, // Aggiungi documentId esplicito
           label: e[labelKey] ?? `#${e.id}`, // Rimuoviamo la visualizzazione dell'ID
           parent: parentId,
           children: [],

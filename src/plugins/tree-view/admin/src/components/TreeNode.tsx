@@ -6,6 +6,7 @@ const ChevronRight = () => <span style={{ display: 'inline-block', width: 20, fo
 
 export interface TreeNodeData {
   id: number | string;
+  documentId?: string; // Aggiungi documentId per Strapi v5
   label: string;
   children?: TreeNodeData[];
   raw?: any;
@@ -59,7 +60,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
     
     // Salva le informazioni del parent nel sessionStorage per essere usate dalla pagina di creazione
     const parentInfo = {
-      parentId: node.id,
+      parentId: node.raw?.documentId || node.documentId || node.id, // Usa documentId per Strapi v5
       parentLabel: node.label,
       parentField: parentField || 'pagina', // Default per la collection pagina
       contentType: contentType,
@@ -68,16 +69,9 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
     
     sessionStorage.setItem('strapi_tree_parent_info', JSON.stringify(parentInfo));
     
-    // Costruisci l'URL per la creazione di una nuova entry
+    // Naviga alla pagina di creazione nella stessa finestra
     const createUrl = `/admin/content-manager/collection-types/${contentType}/create`;
-    
-    // Apri in una nuova tab
-    window.open(createUrl, '_blank');
-    
-    // Mostra un messaggio di conferma
-    setTimeout(() => {
-      alert(`Aperta pagina di creazione per aggiungere un figlio a "${node.label}".\n\nRicordati di selezionare "${node.label}" nel campo "${parentField || 'pagina'}" per creare la relazione parent-child.`);
-    }, 500);
+    window.location.href = createUrl;
   };
   
   return (
@@ -126,8 +120,8 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
           {node.label}
         </span>
         
-        {/* Bottone per aggiungere un figlio */}
-        {contentType && (
+        {/* Bottone per aggiungere un figlio - solo per la collection pagina */}
+        {contentType === 'api::pagina.pagina' && (
           <button
             type="button"
             onClick={handleAddChild}

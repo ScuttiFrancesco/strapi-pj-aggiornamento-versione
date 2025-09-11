@@ -31,7 +31,7 @@ export const TreeView: React.FC<TreeViewProps> = ({ data, contentType, parentFie
         </div>
       ) : (
         <>
-          {contentType && (
+          {contentType === 'api::pagina.pagina' && (
             <div style={{
               marginBottom: '16px',
               padding: '8px 12px',
