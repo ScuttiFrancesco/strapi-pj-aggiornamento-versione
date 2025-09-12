@@ -50,11 +50,34 @@ module.exports = {
 
     strapi.log.info(`[tree-view] Building tree for ${contentType}, parent field: ${actualParentField}, label field: ${labelKey}`);
 
-    // Fetch all entries
+    // Fetch all entries, excluding soft-deleted ones
+    const filters = {};
+
+    // Controlla se il content type ha campi per soft delete
+    if (ctSchema.attributes.deletedAt) {
+      filters.deletedAt = { $null: true };
+    }
+    
+    // Altri possibili campi soft delete
+    if (ctSchema.attributes.deleted) {
+      filters.deleted = { $ne: true };
+    }
+    
+    if (ctSchema.attributes.isDeleted) {
+      filters.isDeleted = { $ne: true };
+    }
+
+    // Se il content type ha un campo publishedAt, considera solo quelli pubblicati
+    if (ctSchema.attributes.publishedAt) {
+      filters.publishedAt = { $notNull: true };
+    }
+
+    strapi.log.info(`[tree-view] Filters applied:`, JSON.stringify(filters, null, 2));
+
     const entries = await strapi.entityService.findMany(contentType, {
       populate: [actualParentField],
       fields: ['id', labelKey, actualParentField],
-      filters: {},
+      filters: filters,
       sort: { id: 'asc' },
       limit: -1,
     });

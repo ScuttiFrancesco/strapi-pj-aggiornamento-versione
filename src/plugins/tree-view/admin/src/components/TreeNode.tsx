@@ -22,23 +22,31 @@ export interface TreeNodeProps {
 const indent = (level: number, borderColor?: string) => ({ 
   paddingLeft: `${level * 40}px`,
   borderLeft: level > 0 ? `3px solid ${borderColor || '#dee2e6'}` : 'none',
-  marginLeft: level > 0 ? '10px' : '0'
+  marginLeft: level > 0 ? `${level*20}px` : '0'
 });
 
 // Funzione per generare colori progressivi basati sul livello
 const getLevelColors = (level: number, hasChildren: boolean) => {
   const colorSchemes = [
-    // Livello 0 - Root (blu scuro)
+     // Livello 0 - Root (blu scuro)
     { bg: '#e3f2fd', text: '#1565c0', border: '#2196f3' },
     // Livello 1 - Figli (verde)
     { bg: '#e8f5e8', text: '#2e7d32', border: '#4caf50' },
     // Livello 2 - Nipoti (arancione)
     { bg: '#fff3e0', text: '#ef6c00', border: '#ff9800' },
-    // Livello 3+ - Pronipoti (viola)
+    // Livello 3 - Pronipoti (viola)
     { bg: '#f3e5f5', text: '#7b1fa2', border: '#9c27b0' },
+    // Livello 4 - Teal/Acquamarina
+    { bg: '#e0f2f1', text: '#00695c', border: '#009688' },
+    // Livello 5 - Rosso/Rosa
+    { bg: '#fce4ec', text: '#c2185b', border: '#e91e63' },
+    // Livello 6 - Indigo/Blu scuro
+    { bg: '#e8eaf6', text: '#303f9f', border: '#3f51b5' },
+    // Livello 7+ - Marrone/Terra
+    { bg: '#efebe9', text: '#5d4037', border: '#795548' },
   ];
   
-  // Usa l'ultimo schema per livelli > 3
+  // Usa l'ultimo schema per livelli > 7
   const colorIndex = Math.min(level, colorSchemes.length - 1);
   const colors = colorSchemes[colorIndex];
   
@@ -94,7 +102,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            style={{
+            style={{              
               background: 'none',
               border: 'none',
               cursor: 'pointer',

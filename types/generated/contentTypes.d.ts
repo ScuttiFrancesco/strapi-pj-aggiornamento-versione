@@ -589,7 +589,7 @@ export interface ApiPaginaPagina extends Struct.CollectionTypeSchema {
     singularName: 'pagina';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     _softDeletedAt: Schema.Attribute.DateTime & Schema.Attribute.Private;

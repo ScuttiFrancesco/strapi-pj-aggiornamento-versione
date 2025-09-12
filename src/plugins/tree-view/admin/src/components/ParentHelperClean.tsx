@@ -88,7 +88,7 @@ export const ParentHelperClean: React.FC = () => {
       // Monitora l'URL per aspettare che l'entry sia salvata
       let documentId: string | null = null;
       let attempts = 0;
-      const maxAttempts = 15; // 15 tentativi = 30 secondi max
+      const maxAttempts = 30; // 30 tentativi = 60 secondi max
       
       console.log('⏳ Aspettando che l\'entry sia salvata...');
       
