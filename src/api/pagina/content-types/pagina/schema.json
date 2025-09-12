@@ -7,7 +7,7 @@
     "displayName": "Pagina"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {

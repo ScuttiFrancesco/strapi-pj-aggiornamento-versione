@@ -26,6 +26,7 @@ const plugin = {
     console.log('%c[tree-view] admin bootstrap()', 'color:#6c5ce7');
     
     // Aggiungi il ParentHelper globalmente
+    let root: any = null;
     const renderParentHelper = () => {
       // Crea un contenitore per il ParentHelper se non esiste
       let helperContainer = document.getElementById('tree-view-parent-helper');
@@ -35,9 +36,12 @@ const plugin = {
         document.body.appendChild(helperContainer);
       }
       
-      // Render del componente
-      import('react-dom').then(({ render }) => {
-        render(React.createElement(ParentHelperClean), helperContainer);
+      // Render del componente usando React 18 createRoot API
+      import('react-dom/client').then(({ createRoot }) => {
+        if (!root) {
+          root = createRoot(helperContainer);
+        }
+        root.render(React.createElement(ParentHelperClean));
       });
     };
     
