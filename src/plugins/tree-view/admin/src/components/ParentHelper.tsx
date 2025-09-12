@@ -13,118 +13,361 @@ export const ParentHelper: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'manual'>('loading');
 
+  // Funzione per fuzzy matching
+  const fuzzyMatch = (text: string, pattern: string): boolean => {
+    if (pattern.length === 0) return true;
+    if (text.length === 0) return false;
+    
+    let patternIndex = 0;
+    for (let i = 0; i < text.length && patternIndex < pattern.length; i++) {
+      if (text[i] === pattern[patternIndex]) {
+        patternIndex++;
+      }
+    }
+    return patternIndex === pattern.length;
+  };
+
   // Funzione per inserire automaticamente il parent nel campo relazione
   const autoFillRelationField = async (info: ParentInfo) => {
-    console.log('🚀 Iniziando auto-compilazione per:', info);
+    console.log('🚀 Auto-compilazione SEMPLIFICATA per:', info);
+    console.log('📋 Parent documentId:', info.parentId);
+    console.log('📋 Parent label:', info.parentLabel);
     setStatus('loading');
     
     // Aspetta che la pagina sia completamente caricata
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     try {
-      // Strategia principale: Usa l'API di Strapi per ottenere i dati della relazione
-      const parentData = await fetchParentData(info.parentId, info.contentType);
-      
-      if (parentData) {
-        console.log('📦 Dati parent ottenuti:', parentData);
-        const success = await setCompleteRelation(parentData, info);
-        if (success) {
-          setStatus('success');
-          return;
-        }
-      }
-      
-      console.log('❌ Dati parent non trovati, fallback al metodo click');
-      const success = await fallbackClickMethod(info);
-      if (!success) {
-        setStatus('manual'); // Nuovo stato per indicare selezione manuale
-      } else {
-        setStatus('success');
-      }
+      // Strategia DIRETTA: Usa il documentId del parent dal TreeView
+      const success = await setDirectRelation(info);
+      setStatus(success ? 'success' : 'manual');
       
     } catch (error) {
       console.error('❌ Errore nell\'auto-compilazione:', error);
-      const success = await fallbackClickMethod(info);
-      setStatus(success ? 'success' : 'manual');
+      setStatus('manual');
     }
   };
 
-  // Funzione per ottenere i dati del parent tramite API
-  const fetchParentData = async (parentId: string | number, contentType: string) => {
+  // Funzione SEMPLIFICATA per impostare la relazione usando direttamente il documentId
+  const setDirectRelation = async (info: ParentInfo): Promise<boolean> => {
     try {
-      // Per Strapi v5, usa documentId direttamente nell'URL se è una stringa
-      // altrimenti usa filtri per ID numerico
-      // Trasforma api::pagina.pagina in paginas
-      const endpointBase = contentType.replace('api::', '').split('.')[0] + 's';
+      console.log('🎯 Impostazione diretta della relazione');
+      console.log('📋 DocumentId parent:', info.parentId);
+      console.log('📋 Label parent:', info.parentLabel);
       
-      let response;
-      if (typeof parentId === 'string' && parentId.length > 10) {
-        // Se parentId è una stringa lunga, probabilmente è un documentId
-        response = await fetch(`/api/${endpointBase}/${parentId}?populate=*`);
-      } else {
-        // Se è numerico, usa i filtri
-        response = await fetch(`/api/${endpointBase}?filters[id][$eq]=${parentId}&populate=*`);
+      const relationField = document.querySelector('input[name="pagina"][role="combobox"]') as HTMLInputElement;
+      
+      if (!relationField) {
+        console.log('❌ Campo relazione non trovato');
+        return false;
       }
       
-      if (response.ok) {
-        const data = await response.json();
-        // Se è una chiamata diretta con documentId, restituisce data.data
-        // Se è una chiamata con filtri, restituisce data.data[0]
-        return data.data?.length !== undefined ? data.data[0] : data.data;
+      // Step 1: Focus sul campo
+      console.log('🔧 Step 1: Focus sul campo relazione');
+      relationField.focus();
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Step 2: Clicca per aprire il dropdown
+      console.log('🔧 Step 2: Apertura dropdown');
+      relationField.click();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Step 3: Digita il nome del parent per filtrare
+      console.log('🔧 Step 3: Digitazione per filtrare:', info.parentLabel);
+      relationField.value = info.parentLabel;
+      relationField.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Step 4: Cerca le opzioni nel dropdown
+      console.log('🔧 Step 4: Ricerca opzioni nel dropdown');
+      const dropdownOptions = Array.from(document.querySelectorAll('[role="option"]'));
+      
+      console.log(`📋 Trovate ${dropdownOptions.length} opzioni nel dropdown`);
+      dropdownOptions.forEach((option, index) => {
+        const text = option.textContent?.trim() || '';
+        console.log(`   ${index}: "${text}"`);
+      });
+      
+      // Step 5: Trova e clicca l'opzione che corrisponde al parent
+      for (const option of dropdownOptions) {
+        const text = option.textContent?.trim() || '';
+        if (text && text.toLowerCase().includes(info.parentLabel.toLowerCase())) {
+          console.log('✅ Opzione trovata e cliccata:', text);
+          (option as HTMLElement).click();
+          await new Promise(resolve => setTimeout(resolve, 300));
+          return true;
+        }
       }
+      
+      // Step 6: Se non trova opzioni, prova con Enter
+      console.log('� Step 6: Fallback con Enter');
+      relationField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Verifica se il campo è stato compilato
+      if (relationField.value && relationField.value.toLowerCase().includes(info.parentLabel.toLowerCase())) {
+        console.log('✅ Campo compilato con successo via Enter');
+        return true;
+      }
+      
+      console.log('❌ Impossibile impostare la relazione automaticamente');
+      return false;
+      
     } catch (error) {
-      console.error('Errore nel fetch dei dati parent:', error);
+      console.error('❌ Errore in setDirectRelation:', error);
+      return false;
     }
-    return null;
   };
 
   // Funzione per impostare la relazione completa
-  const setCompleteRelation = async (parentData: any, info: ParentInfo) => {
+  const setCompleteRelation = async (allParentData: any[], info: ParentInfo) => {
     try {
+      console.log('🔍 Cercando parent con slug/label:', info.parentLabel);
+      console.log('🔍 Dati parent disponibili:', allParentData.length, 'elementi');
+      
+      // Verifica che i dati parent siano stati caricati
+      if (!allParentData || allParentData.length === 0) {
+        console.log('❌ Nessun dato parent disponibile');
+        return false;
+      }
+
+      // Trova il parent corrispondente nello slug o nel titolo
+      const parentSlug = info.parentLabel; // parentLabel dovrebbe contenere lo slug
+      const parentItem = allParentData.find(item => 
+        (item.slug && item.slug.toLowerCase() === parentSlug.toLowerCase()) ||
+        (item.titolo && item.titolo.toLowerCase() === parentSlug.toLowerCase()) ||
+        (item.title && item.title.toLowerCase() === parentSlug.toLowerCase())
+      );
+
+      console.log('🎯 Parent cercato:', parentSlug);
+      console.log('🎯 Parent trovato:', parentItem);
+
+      if (!parentItem) {
+        console.log(`❌ Parent "${parentSlug}" non trovato nei dati:`, allParentData.map(p => ({ 
+          id: p.id, 
+          slug: p.slug, 
+          titolo: p.titolo || p.title,
+          publishedAt: p.publishedAt 
+        })));
+        // Messaggio utente semplificato 
+        console.log(`⚠️ Parent "${parentSlug}" non trovato nel database. Potrebbe non essere pubblicato. Selezione manuale richiesta.`);
+        return false;
+      }
+
       const relationField = document.querySelector('input[name="pagina"][role="combobox"]') as HTMLInputElement;
       
       if (relationField) {
-        console.log('🎯 Usando strategia diretta senza dropdown');
+        console.log('🎯 Usando strategia super migliorata');
         
-        const parentLabel = parentData.attributes?.titolo || parentData.attributes?.title || info.parentLabel;
-        const parentId = parentData.documentId || parentData.id;
+        const parentLabel = parentItem.titolo || parentItem.title || parentSlug;
+        const parentId = parentItem.documentId || parentItem.id;
         console.log('📝 Parent label:', parentLabel, 'ID:', parentId);
         
-        // Strategia diretta: Imposta il valore senza mai attivare il dropdown
-        console.log('🔧 Impostazione diretta del valore...');
+        // Step 1: Focus e attivazione del campo
+        console.log('🔧 Step 1: Attivazione campo relazione...');
+        relationField.focus();
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Imposta il valore direttamente
-        relationField.value = parentLabel;
+        // Step 2: Clicca direttamente sul campo per assicurarsi che il dropdown si apra
+        console.log('🔧 Step 2: Click sul campo per aprire dropdown...');
+        relationField.click();
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Cerca campi correlati
-        const hiddenField = relationField.parentElement?.querySelector('input[type="hidden"]') as HTMLInputElement;
-        const displayField = relationField.closest('div')?.querySelector('input[readonly]') as HTMLInputElement;
-        
-        if (hiddenField) {
-          hiddenField.value = parentId.toString();
-          console.log('✅ Campo hidden impostato');
-        }
-        
-        if (displayField) {
-          displayField.value = parentLabel;
-          console.log('✅ Campo display impostato');
-        }
-        
-        // Trigger solo evento di input minimale
+        // Step 3: Svuota il campo e digita per attivare il filtro
+        console.log('🔧 Step 3: Digitazione per filtrare...');
+        relationField.value = '';
         relationField.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        // Attendi stabilizzazione
+        // Digita il nome del parent per filtrare
+        relationField.value = parentLabel;
+        relationField.dispatchEvent(new Event('input', { bubbles: true }));
+        relationField.dispatchEvent(new KeyboardEvent('keyup', { key: parentLabel.charAt(parentLabel.length - 1), bubbles: true }));
+        
+        console.log('⏳ Aspettando che il dropdown si carichi...');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Step 4: Cerca opzioni più specificamente nel dropdown del campo relazione
+        console.log('🔧 Step 4: Ricerca opzioni nel dropdown specifico...');
+        
+        // Selettori più specifici per Strapi relation dropdown
+        const dropdownSelectors = [
+          `input[name="pagina"] + div [role="option"]`,
+          `input[name="pagina"] ~ div [role="option"]`,
+          `.react-select__menu [role="option"]`,
+          `[data-testid*="combobox"] [role="option"]`,
+          `div[class*="menu"] [role="option"]`,
+          `div[class*="dropdown"] [role="option"]`
+        ];
+        
+        let dropdownOptions: Element[] = [];
+        let usedSelector = '';
+        
+        for (const selector of dropdownSelectors) {
+          dropdownOptions = Array.from(document.querySelectorAll(selector));
+          if (dropdownOptions.length > 0) {
+            usedSelector = selector;
+            console.log(`📋 Trovate ${dropdownOptions.length} opzioni con selettore: ${selector}`);
+            break;
+          }
+        }
+        
+        if (dropdownOptions.length === 0) {
+          console.log('⚠️ Nessuna opzione trovata con selettori specifici, provo selettore generico...');
+          
+          // Fallback: cerca tutte le opzioni e filtra per vicinanza al campo
+          const allOptions = Array.from(document.querySelectorAll('[role="option"]'));
+          const fieldRect = relationField.getBoundingClientRect();
+          
+          // Filtra opzioni che sono vicine al campo (entro 200px)
+          dropdownOptions = allOptions.filter(option => {
+            const optionRect = option.getBoundingClientRect();
+            const distance = Math.abs(optionRect.top - fieldRect.bottom);
+            return distance < 200;
+          });
+          
+          console.log(`📋 Filtrate ${dropdownOptions.length} opzioni vicine al campo`);
+        }
+        
+        console.log('🔍 Opzioni nel dropdown specifico:');
+        dropdownOptions.forEach((option, index) => {
+          const text = option.textContent?.trim() || '';
+          console.log(`   ${index}: "${text}"`);
+        });
+        
+        // Step 5: Cerca e clicca l'opzione corretta
+        let optionFound = false;
+        
+        console.log('🔍 Analizzando opzioni per trovare match...');
+        console.log('🎯 Cerco parent:', parentLabel);
+        console.log('📋 Opzioni disponibili:', dropdownOptions.map(opt => opt.textContent?.trim()).filter(text => text));
+        
+        if (dropdownOptions.length === 0) {
+          console.log('⚠️ Nessuna opzione nel dropdown - parent potrebbe non esistere');
+          // Prova con Enter per confermare il testo digitato
+          console.log('🔧 Provo con Enter per confermare...');
+          relationField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          relationField.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Verifica se Enter ha funzionato
+          if (relationField.value && relationField.value.toLowerCase().includes(parentLabel.toLowerCase())) {
+            console.log('✅ Enter ha funzionato - parent confermato!');
+            optionFound = true;
+          } else {
+            console.log('❌ Parent non trovato nel database. Potrebbe non essere pubblicato o non esistere.');
+          }
+        } else if (dropdownOptions.length === 1) {
+          // Se c'è solo un'opzione, selezionala automaticamente
+          const singleOption = dropdownOptions[0];
+          const singleText = singleOption.textContent?.trim() || '';
+          console.log('✅ Una sola opzione disponibile, la seleziono:', singleText);
+          (singleOption as HTMLElement).click();
+          optionFound = true;
+        } else if (dropdownOptions.length > 1) {
+          // Se ci sono più opzioni, cerca quella giusta
+          for (const option of dropdownOptions) {
+            const text = option.textContent?.trim() || '';
+            
+            if (text && text.length > 0) {
+              // Ricerca molto più flessibile
+              const textLower = text.toLowerCase();
+              const labelLower = parentLabel.toLowerCase();
+              
+              if (
+                textLower === labelLower ||                           // Corrispondenza esatta
+                textLower.includes(labelLower) ||                    // Il testo contiene il label
+                labelLower.includes(textLower) ||                    // Il label contiene il testo
+                textLower.replace(/\s+/g, '') === labelLower.replace(/\s+/g, '') || // Senza spazi
+                fuzzyMatch(textLower, labelLower)                    // Match fuzzy
+              ) {
+                console.log('✅ Opzione trovata con match flessibile:', text);
+                (option as HTMLElement).click();
+                optionFound = true;
+                break;
+              }
+            }
+          }
+          
+          // Se non trova match specifico, prova a selezionare la prima opzione non vuota
+          if (!optionFound) {
+            const firstNonEmptyOption = dropdownOptions.find(opt => 
+              opt.textContent?.trim() && opt.textContent.trim().length > 0
+            );
+            
+            if (firstNonEmptyOption) {
+              const firstText = firstNonEmptyOption.textContent?.trim() || '';
+              console.log('🎯 Nessun match specifico, seleziono la prima opzione valida:', firstText);
+              (firstNonEmptyOption as HTMLElement).click();
+              optionFound = true;
+            }
+          }
+        }
+        
+        if (!optionFound) {
+          console.log('❌ Opzione non trovata, provo strategia fallback...');
+          
+          // Fallback: Usa strategia di selezione con eventi React
+          console.log('🔧 Fallback: Strategia eventi React diretti...');
+          
+          // Trova il contenitore del campo
+          const fieldContainer = relationField.closest('[data-testid], .field, .form-group, .react-select') || relationField.parentElement;
+          
+          // Imposta valori diretti
+          relationField.value = parentLabel;
+          
+          // Crea un evento di selezione simulato
+          const syntheticEvent = {
+            target: { name: 'pagina', value: { documentId: parentId, id: parentId } },
+            persist: () => {},
+          };
+          
+          // Triggera eventi nell'ordine corretto
+          relationField.dispatchEvent(new Event('focus', { bubbles: true }));
+          relationField.dispatchEvent(new Event('input', { bubbles: true }));
+          relationField.dispatchEvent(new Event('change', { bubbles: true }));
+          
+          // Simula evento di selezione React
+          const selectEvent = new CustomEvent('select', { 
+            detail: { 
+              value: { documentId: parentId, id: parentId },
+              label: parentLabel 
+            },
+            bubbles: true 
+          });
+          relationField.dispatchEvent(selectEvent);
+          
+          // Finalizza con blur
+          await new Promise(resolve => setTimeout(resolve, 300));
+          relationField.blur();
+        }
+        
+        // Step 6: Verifica finale
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Verifica se funziona
-        if (relationField.value === parentLabel || displayField?.value === parentLabel) {
-          console.log('✅ Strategia diretta riuscita!');
+        const finalValue = relationField.value;
+        const fieldContainer = relationField.closest('[data-testid], .field, .form-group, .react-select');
+        const hiddenInputs = fieldContainer?.querySelectorAll('input[type="hidden"]') || [];
+        const hasValidValue = hiddenInputs.length > 0 && Array.from(hiddenInputs).some(input => 
+          (input as HTMLInputElement).value && (input as HTMLInputElement).value !== ''
+        );
+        
+        console.log('🔍 Verifica finale dettagliata:', {
+          finalValue,
+          hiddenInputsCount: hiddenInputs.length,
+          hasValidValue,
+          expectedLabel: parentLabel,
+          usedSelector
+        });
+        
+        if ((finalValue && finalValue.includes(parentLabel)) || hasValidValue) {
+          console.log('✅ Strategia super migliorata riuscita!');
           setTimeout(() => handleDismiss(), 2000);
           return true;
         }
         
-        console.log('❌ Strategia diretta fallita, resetto campo');
-        await resetRelationField(relationField);
+        console.log('❌ Strategia super migliorata fallita, campo pronto per uso manuale');
+        setStatus('manual');
         return false;
       }
       
@@ -324,7 +567,8 @@ export const ParentHelper: React.FC = () => {
         )}
         {status === 'manual' && (
           <div style={{ marginTop: '8px', color: '#87CEEB', fontSize: '12px' }}>
-            🔧 Campo pronto per selezione manuale. Clicca sul campo "pagina" qui sopra per selezionare.
+            🔧 Parent "{parentInfo.parentLabel}" non trovato automaticamente.<br/>
+            Verifica che esista e sia pubblicato, oppure seleziona manualmente dal campo "pagina" qui sopra.
           </div>
         )}
         {status === 'error' && (

@@ -2,7 +2,7 @@ import React from 'react';
 import pluginId from './pluginId';
 import { getTranslation } from './utils/getTrad';
 import PluginIcon from './pluginIcon';
-import ParentHelper from './components/ParentHelper';
+import { ParentHelperClean } from './components/ParentHelperClean';
 
 const plugin = {
   register(app: any) {
@@ -37,7 +37,7 @@ const plugin = {
       
       // Render del componente
       import('react-dom').then(({ render }) => {
-        render(React.createElement(ParentHelper), helperContainer);
+        render(React.createElement(ParentHelperClean), helperContainer);
       });
     };
     

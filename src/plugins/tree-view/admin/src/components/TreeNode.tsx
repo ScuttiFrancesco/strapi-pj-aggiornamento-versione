@@ -50,7 +50,7 @@ const getLevelColors = (level: number, hasChildren: boolean) => {
 };
 
 export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType, parentField }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
   const levelColors = getLevelColors(level, hasChildren);
   
@@ -61,13 +61,16 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
     // Salva le informazioni del parent nel sessionStorage per essere usate dalla pagina di creazione
     const parentInfo = {
       parentId: node.raw?.documentId || node.documentId || node.id, // Usa documentId per Strapi v5
+      parentDocumentId: node.raw?.documentId || node.documentId || node.id,
       parentLabel: node.label,
+      parentSlug: node.label.toLowerCase().replace(/\s+/g, '-'),
       parentField: parentField || 'pagina', // Default per la collection pagina
       contentType: contentType,
       timestamp: Date.now()
     };
     
-    sessionStorage.setItem('strapi_tree_parent_info', JSON.stringify(parentInfo));
+    console.log('💾 TreeNode salva parentInfo:', parentInfo);
+    sessionStorage.setItem('parentInfo', JSON.stringify(parentInfo));
     
     // Naviga alla pagina di creazione nella stessa finestra
     const createUrl = `/admin/content-manager/collection-types/${contentType}/create`;
@@ -75,7 +78,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
   };
   
   return (
-    <div style={{ marginBottom: '6px' }}>
+    <div style={{ marginBottom: '6px' }} >
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
