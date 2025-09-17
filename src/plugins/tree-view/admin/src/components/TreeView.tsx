@@ -5,9 +5,10 @@ export interface TreeViewProps {
   data: TreeNodeData[];
   contentType?: string;
   parentField?: string;
+  onLoadChildren?: (parentId: string | number, nodeData?: TreeNodeData) => Promise<TreeNodeData[]>;
 }
 
-export const TreeView: React.FC<TreeViewProps> = ({ data, contentType, parentField }) => {
+export const TreeView: React.FC<TreeViewProps> = ({ data, contentType, parentField, onLoadChildren }) => {
   return (
     <div style={{ 
       fontFamily: 'Arial, sans-serif', 
@@ -51,6 +52,7 @@ export const TreeView: React.FC<TreeViewProps> = ({ data, contentType, parentFie
               level={0} 
               contentType={contentType}
               parentField={parentField}
+              onLoadChildren={onLoadChildren}
             />
           ))}
         </>

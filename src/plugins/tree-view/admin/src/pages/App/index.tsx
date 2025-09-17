@@ -5,7 +5,10 @@ import pluginId from '../../pluginId';
 interface NodeData {
   id: number | string;
   label: string;
+  slug?: string; // Aggiungi slug per il content type pagina
   children?: NodeData[];
+  hasChildren?: boolean; // Flag per lazy loading
+  raw?: any; // Dati originali del nodo
 }
 
 interface ContentType {
@@ -110,6 +113,7 @@ const App: React.FC = () => {
     try {
       const params = new URLSearchParams();
       params.set('contentType', query.contentType);
+      params.set('lazyLoad', 'true'); // Abilita lazy loading
       if (query.parentField) params.set('parentField', query.parentField);
       if (query.labelField) params.set('labelField', query.labelField);
       
@@ -152,6 +156,7 @@ const App: React.FC = () => {
     try {
       const params = new URLSearchParams();
       params.set('contentType', contentType);
+      params.set('lazyLoad', 'true'); // Abilita lazy loading
       // Usa i valori correnti di parentField e labelField se disponibili
       if (query.parentField) params.set('parentField', query.parentField);
       if (query.labelField) params.set('labelField', query.labelField);
@@ -181,6 +186,109 @@ const App: React.FC = () => {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Funzione per caricare i children on-demand usando l'endpoint custom
+  const loadChildren = async (parentId: string | number, nodeData?: any): Promise<NodeData[]> => {
+    try {
+      // Per il content type pagina, usa l'endpoint custom che richiede lo slug
+      if (query.contentType === 'api::pagina.pagina') {
+        // Prova a ottenere lo slug dal nodeData
+        let slug = nodeData?.slug || nodeData?.raw?.slug;
+        
+        if (!slug) {
+          // Fallback: cerca il nodo nei dati correnti per trovare lo slug
+          const findNodeWithSlug = (nodes: NodeData[], targetId: string | number): string | null => {
+            for (const node of nodes) {
+              if (node.id === targetId) {
+                return (node as any).slug || (node as any).raw?.slug;
+              }
+              if (node.children) {
+                const found = findNodeWithSlug(node.children, targetId);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          
+          slug = findNodeWithSlug(data, parentId);
+        }
+        
+        if (!slug) {
+          console.error('❌ Slug non trovato per il nodo', parentId, 'NodeData:', nodeData);
+          throw new Error(`Slug non trovato per il nodo ${parentId}`);
+        }
+        
+        const url = `/api/pagine/${slug}/subtree`;
+        console.log(`🔍 Loading subtree from custom endpoint: ${url} (slug: ${slug})`);
+        
+        const res = await fetch(url);
+        const responseText = await res.text();
+        
+        let json;
+        try {
+          json = JSON.parse(responseText);
+        } catch (parseErr) {
+          console.error('❌ JSON parse error:', parseErr);
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+        }
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${json.message || 'Unknown error'}`);
+        }
+        
+        // Trasforma i dati nel formato NodeData in modo ricorsivo
+        const transformNode = (node: any): NodeData => ({
+          id: node.documentId || node.id,
+          label: node.titolo || node.label || `Node ${node.id}`,
+          slug: node.slug,
+          children: node.children ? node.children.map(transformNode) : undefined,
+          hasChildren: node.children && node.children.length > 0,
+          raw: node
+        });
+        
+        // Il tuo endpoint restituisce l'intero subtree con la radice
+        // Dobbiamo estrarre solo i children dalla risposta e trasformarli ricorsivamente
+        const subtreeData = json.data || json;
+        const children = subtreeData.children || [];
+        
+        const transformedChildren = children.map(transformNode);
+        
+        console.log(`✅ Children loaded for ${parentId} (slug: ${slug}):`, transformedChildren.length, 'nodes');
+        console.log('🔍 Transformed children structure:', transformedChildren);
+        return transformedChildren;
+      } else {
+        // Per altri content types, usa l'endpoint del plugin originale
+        const params = new URLSearchParams();
+        params.set('contentType', query.contentType);
+        if (query.parentField) params.set('parentField', query.parentField);
+        if (query.labelField) params.set('labelField', query.labelField);
+        
+        const url = `/admin/plugins/tree-view/tree/children/${parentId}?${params.toString()}`;
+        console.log(`🔍 Loading children from plugin endpoint: ${url}`);
+        
+        const res = await fetch(url);
+        const responseText = await res.text();
+        
+        let json;
+        try {
+          json = JSON.parse(responseText);
+        } catch (parseErr) {
+          console.error('❌ JSON parse error:', parseErr);
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+        }
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${json.message || 'Unknown error'}`);
+        }
+        
+        console.log(`✅ Children loaded for ${parentId}:`, json.data?.length || 0, 'nodes');
+        return json.data || [];
+      }
+    } catch (error) {
+      console.error('❌ Error loading children:', error);
+      throw error;
     }
   };
 
@@ -287,6 +395,7 @@ const App: React.FC = () => {
             data={data} 
             contentType={query.contentType}
             parentField={query.parentField}
+            onLoadChildren={loadChildren}
           />
         )}
       </div>

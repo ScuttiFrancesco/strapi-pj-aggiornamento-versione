@@ -12,9 +12,12 @@ interface Pagina {
 
 // Funzione helper ricorsiva
 async function findDescendants(parentId: number): Promise<Pagina[]> {
-  // Trova i figli diretti
+  // Trova i figli diretti solo se pubblicati
   const children: Pagina[] = await strapi.db.query('api::pagina.pagina').findMany({
-    where: { pagina: { id: parentId } },
+    where: { 
+      pagina: { id: parentId },
+      publishedAt: { $notNull: true } // Solo contenuti pubblicati
+    },
   });
 
   // Per ogni figlio, trova ricorsivamente i suoi discendenti

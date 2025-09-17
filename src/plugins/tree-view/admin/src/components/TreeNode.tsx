@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Fallback simple chevron icons (unicode) to avoid extra deps
 const ChevronDown = () => <span style={{ display: 'inline-block', width: 20, fontSize: '16px' }}>▼</span>;
@@ -9,6 +9,7 @@ export interface TreeNodeData {
   documentId?: string; // Aggiungi documentId per Strapi v5
   label: string;
   children?: TreeNodeData[];
+  hasChildren?: boolean; // Flag per lazy loading
   raw?: any;
 }
 
@@ -17,6 +18,7 @@ export interface TreeNodeProps {
   level?: number;
   contentType?: string;
   parentField?: string;
+  onLoadChildren?: (nodeId: string | number, nodeData?: TreeNodeData) => Promise<TreeNodeData[]>;
 }
 
 const indent = (level: number, borderColor?: string) => ({ 
@@ -57,10 +59,61 @@ const getLevelColors = (level: number, hasChildren: boolean) => {
   };
 };
 
-export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType, parentField }) => {
+export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType, parentField, onLoadChildren }) => {
   const [open, setOpen] = useState(false);
-  const hasChildren = node.children && node.children.length > 0;
+  const [children, setChildren] = useState<TreeNodeData[]>(node.children || []);
+  const [childrenLoaded, setChildrenLoaded] = useState(!!(node.children && node.children.length > 0));
+  const [isLoading, setIsLoading] = useState(false);
+  const [actuallyHasChildren, setActuallyHasChildren] = useState(node.hasChildren);
+  const [hasNoPublishedChildren, setHasNoPublishedChildren] = useState(false);
+  
+  // Determina se il nodo ha children - usa actuallyHasChildren dopo il caricamento
+  const hasChildren = (children && children.length > 0) || (actuallyHasChildren && !childrenLoaded);
   const levelColors = getLevelColors(level, hasChildren);
+  
+  // useEffect per caricare i children quando si apre il nodo
+  useEffect(() => {
+    if (open && !childrenLoaded && actuallyHasChildren && onLoadChildren) {
+      setIsLoading(true);
+      console.log(`🔄 Loading children for node ${node.id} (${node.label})`, {
+        nodeData: node,
+        documentId: node.documentId,
+        rawData: node.raw
+      });
+      
+      onLoadChildren(node.id, node)
+        .then(childrenData => {
+          setChildren(childrenData);
+          setChildrenLoaded(true);
+          
+          // Aggiorna actuallyHasChildren basandosi sui risultati effettivi
+          if (childrenData.length === 0) {
+            setHasNoPublishedChildren(true);
+            // Non chiudere automaticamente, lascia che l'utente veda il messaggio
+          } else {
+            setActuallyHasChildren(true);
+            setHasNoPublishedChildren(false);
+          }
+          
+          console.log(`✅ Loaded ${childrenData.length} children for node ${node.id}`, {
+            children: childrenData,
+            parentNode: node
+          });
+        })
+        .catch(error => {
+          console.error('❌ Error loading children:', error);
+          setHasNoPublishedChildren(true);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [open, childrenLoaded, actuallyHasChildren, node.id, onLoadChildren]);
+  
+  // Click handler semplificato - solo toggling
+  const handleToggle = () => {
+    setOpen(!open);
+  };
   
   // Funzione per navigare alla creazione di una nuova entry
   const handleAddChild = () => {
@@ -101,22 +154,43 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
         {hasChildren ? (
           <button
             type="button"
-            onClick={() => setOpen((o) => !o)}
+            onClick={handleToggle}
+            disabled={isLoading}
             style={{              
               background: 'none',
               border: 'none',
-              cursor: 'pointer',
+              cursor: isLoading ? 'wait' : 'pointer',
               width: 32,
               height: 32,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: 0,
-              borderRadius: '4px'
+              borderRadius: '4px',
+              opacity: isLoading ? 0.6 : 1
             }}
             aria-label={open ? 'Collapse' : 'Expand'}
           >
-            {open ? <ChevronDown /> : <ChevronRight />}
+            {isLoading ? (
+              <span style={{ 
+                display: 'inline-block', 
+                width: 16, 
+                height: 16, 
+                border: '2px solid #ccc',
+                borderTop: '2px solid #666',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}>
+                <style>
+                  {`
+                    @keyframes spin {
+                      0% { transform: rotate(0deg); }
+                      100% { transform: rotate(360deg); }
+                    }
+                  `}
+                </style>
+              </span>
+            ) : open ? <ChevronDown /> : <ChevronRight />}
           </button>
         ) : (
           <span style={{ width: 32 }} />
@@ -162,8 +236,38 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
       </div>
       {open && hasChildren && (
         <div>
-          {node.children!.map((c) => (
-            <TreeNode key={c.id} node={c} level={level + 1} contentType={contentType} parentField={parentField} />
+          {isLoading && !childrenLoaded && (
+            <div style={{ 
+              ...indent(level + 1, levelColors.borderColor),
+              padding: '8px 12px',
+              fontStyle: 'italic',
+              color: '#666'
+            }}>
+              Caricamento children...
+            </div>
+          )}
+          
+          {childrenLoaded && hasNoPublishedChildren && (
+            <div style={{ 
+              ...indent(level + 1, levelColors.borderColor),
+              padding: '8px 12px',
+              fontStyle: 'italic',
+              color: '#999',
+              fontSize: '14px'
+            }}>
+              • Nessun figlio
+            </div>
+          )}
+          
+          {children.map((c) => (
+            <TreeNode 
+              key={c.id} 
+              node={c} 
+              level={level + 1} 
+              contentType={contentType} 
+              parentField={parentField}
+              onLoadChildren={onLoadChildren}
+            />
           ))}
         </div>
       )}
