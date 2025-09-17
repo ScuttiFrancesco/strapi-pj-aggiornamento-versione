@@ -77,25 +77,39 @@ export default factories.createCoreController('api::pagina.pagina', ({ strapi })
    async getChildren(ctx: Context) {
     const { slug } = ctx.params as { slug: string };
     
-    // 1. Trova l'ID della pagina genitore a partire dal suo slug
-    const parentPage = await strapi.db.query('api::pagina.pagina').findOne({
-      where: { slug },
-      select: ['id'], // Ci serve solo l'ID
-    });
+    try {
+      // 1. Trova l'ID della pagina genitore a partire dal suo slug
+      const parentPage = await strapi.db.query('api::pagina.pagina').findOne({
+        where: { 
+          slug,
+          publishedAt: { $notNull: true } // Solo genitori pubblicati
+        },
+        select: ['id'], // Ci serve solo l'ID
+      });
 
-    if (!parentPage) {
-      return ctx.notFound('Pagina genitore non trovata.');
+      if (!parentPage) {
+        return ctx.notFound('Pagina genitore non trovata.');
+      }
+
+      console.log(`🔍 [getChildren] Looking for children of parent ID: ${parentPage.id} (slug: ${slug})`);
+
+      // 2. Trova tutte le pagine che hanno questo ID come genitore e sono pubblicate
+      const children = await strapi.db.query('api::pagina.pagina').findMany({
+        where: { 
+          pagina: { id: parentPage.id },
+          publishedAt: { $notNull: true } // Solo figli pubblicati
+        },
+        orderBy: { titolo: 'asc' }, // Ordina per titolo
+      });
+
+      console.log(`✅ [getChildren] Found ${children.length} children for parent ${parentPage.id}`);
+
+      const sanitizedChildren = await this.sanitizeOutput(children, ctx);
+      return this.transformResponse(sanitizedChildren);
+    } catch (error) {
+      console.error('❌ [getChildren] Error:', error);
+      return ctx.internalServerError('Errore nel caricamento dei figli.');
     }
-
-    // 2. Trova tutte le pagine che hanno questo ID come genitore
-    const children = await strapi.entityService.findMany('api::pagina.pagina', {
-      filters: { pagina: { id: parentPage.id } },
-      // Popola eventuali relazioni dei figli che ti servono
-      // populate: { ... } 
-    });
-
-    const sanitizedChildren = await this.sanitizeOutput(children, ctx);
-    return this.transformResponse(sanitizedChildren);
   },
 
    /**

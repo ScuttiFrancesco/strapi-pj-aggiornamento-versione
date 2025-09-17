@@ -144,8 +144,9 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
         display: 'flex', 
         alignItems: 'center', 
         ...indent(level, levelColors.borderColor),
-        padding: '8px 12px',
+        padding: '8px  12px',
         borderRadius: '6px',
+        marginTop: '4px',
         backgroundColor: levelColors.backgroundColor,
         border: `1px solid ${levelColors.borderColor}`,
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
@@ -230,7 +231,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({ node, level = 0, contentType
             title={`Aggiungi figlio a "${node.label}"`}
           >
             <span style={{ fontSize: '14px' }}>+</span>
-            <span>Aggiungi</span>
+            <span>Aggiungi Figlio</span>
           </button>
         )}
       </div>
