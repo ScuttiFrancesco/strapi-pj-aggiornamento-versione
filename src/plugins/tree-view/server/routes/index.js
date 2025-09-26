@@ -18,4 +18,13 @@ module.exports = [
       auth: false, // Allow admin access without specific auth
     },
   },
+  {
+    method: 'GET',
+    path: '/tree/children/:parentId',
+    handler: 'tree.findChildren',
+    config: { 
+      policies: [],
+      auth: false,
+    },
+  },
 ];
