@@ -118,5 +118,19 @@ export default factories.createCoreController('api::pagina.pagina', ({ strapi })
     const sanitizedTree = await this.sanitizeOutput(rootNode, ctx);
     return this.transformResponse(sanitizedTree);
   },
+
+   async create(ctx: Context) {
+    const { data } = ctx.request.body ?? {};
+    if (!data) return ctx.badRequest("Missing 'data' in request body");
+
+    // If `publishedAt` key is present, honor it. Otherwise force draft by setting null.
+    const payload = Object.prototype.hasOwnProperty.call(data, 'publishedAt') ? data : { ...data, publishedAt: null };
+
+    // Use entityService to create the entry (keeps Strapi lifecycle & policies behavior).
+    const created = await strapi.entityService.create('api::pagina.pagina', { data: payload });
+
+    const sanitized = await this.sanitizeOutput(created, ctx);
+    return this.transformResponse(sanitized);
+  },
   
 }));
