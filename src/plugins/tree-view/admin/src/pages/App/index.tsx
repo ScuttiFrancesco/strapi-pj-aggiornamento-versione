@@ -220,7 +220,7 @@ const App: React.FC = () => {
           throw new Error(`Slug non trovato per il nodo ${parentId}`);
         }
         
-        const url = `/api/pagine/${slug}/subtree`;
+        const url = `/api/pagina/subtree/${slug}`;
         console.log(`🔍 Loading subtree from custom endpoint: ${url} (slug: ${slug})`);
         
         const res = await fetch(url);

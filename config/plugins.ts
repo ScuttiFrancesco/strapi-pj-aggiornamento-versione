@@ -33,7 +33,7 @@ const generatePreviewConfig = () => {
         'comunicati-stampa',
         'news',
         'articoli',
-        'pagine',
+        'pagina',
       ];
     }
   } catch (error) {
@@ -43,7 +43,7 @@ const generatePreviewConfig = () => {
       'comunicati-stampa',
       'news', 
       'articoli',
-      'pagine',
+      'pagina',
     ];
   }
   

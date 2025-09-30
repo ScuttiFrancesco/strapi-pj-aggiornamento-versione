@@ -2,7 +2,7 @@ export default {
   routes: [
     {
       method: 'GET',
-      path: '/pagine/dati-sidebar-archivio',
+      path: '/pagina/dati-sidebar-archivio',
       handler: 'pagina-archivio.index',
      /*  config: {
         auth: false,

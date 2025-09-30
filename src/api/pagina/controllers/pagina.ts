@@ -10,8 +10,11 @@ interface Pagina {
   [key: string]: any;
 }
 
-// Funzione helper ricorsiva
-async function findDescendants(parentId: number): Promise<Pagina[]> {
+// Funzione helper ricorsiva con maxDepth
+async function findDescendants(parentId: number, maxDepth: number = Infinity, currentDepth: number = 1): Promise<Pagina[]> {
+  if (currentDepth > maxDepth) {
+    return [];
+  }
   // Trova i figli diretti solo se pubblicati
   const children: Pagina[] = await strapi.db.query('api::pagina.pagina').findMany({
     where: { 
@@ -22,7 +25,7 @@ async function findDescendants(parentId: number): Promise<Pagina[]> {
 
   // Per ogni figlio, trova ricorsivamente i suoi discendenti
   for (const child of children) {
-    child.children = await findDescendants(child.id);
+    child.children = await findDescendants(child.id, maxDepth, currentDepth + 1);
   }
 
   return children;
@@ -116,9 +119,12 @@ export default factories.createCoreController('api::pagina.pagina', ({ strapi })
    * Recupera il sotto-albero completo di una pagina dato il suo slug.
    * @param {Context} ctx - Il contesto della richiesta Koa.
    */
+
   async getSubtree(ctx: Context) {
     const { slug } = ctx.params as { slug: string };
-    
+    // Leggi maxDeep dalla query string, default Infinity
+    const maxDeep = ctx.query.maxDeep ? parseInt(ctx.query.maxDeep as string, 10) : Infinity;
+
     // 1. Trova il nodo radice del nostro sotto-albero
     const rootNode: Pagina | null = await strapi.db.query('api::pagina.pagina').findOne({
       where: { slug },
@@ -128,8 +134,8 @@ export default factories.createCoreController('api::pagina.pagina', ({ strapi })
       return ctx.notFound('Pagina non trovata.');
     }
 
-    // 2. Avvia la ricerca ricorsiva dei discendenti
-    rootNode.children = await findDescendants(rootNode.id);
+    // 2. Avvia la ricerca ricorsiva dei discendenti con maxDeep
+    rootNode.children = await findDescendants(rootNode.id, maxDeep);
 
     // 3. Sanitize e restituisci l'albero completo
     const sanitizedTree = await this.sanitizeOutput(rootNode, ctx);
