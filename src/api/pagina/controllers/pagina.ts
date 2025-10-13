@@ -31,6 +31,22 @@ async function findDescendants(parentId: number, maxDepth: number = Infinity, cu
   return children;
 }
 
+function reduceToSlugAndChildren(node: Pagina | Pagina[] | null): any {
+  if (!node) return null;
+  if (Array.isArray(node)) {
+    return node.map(reduceToSlugAndChildren);
+  }
+  // Mantieni solo slug e ricorsione sui children
+  return {
+    slug: node.slug,
+    tipoLayout: node.tipoLayout,
+    titolo: node.titolo,
+    id: node.id,
+    documentId: node.documentId,
+    children: node.children ? reduceToSlugAndChildren(node.children) : [],
+  };
+}
+
 export default factories.createCoreController('api::pagina.pagina', ({ strapi }) => ({
   
   /**
@@ -137,8 +153,10 @@ export default factories.createCoreController('api::pagina.pagina', ({ strapi })
     // 2. Avvia la ricerca ricorsiva dei discendenti con maxDeep
     rootNode.children = await findDescendants(rootNode.id, maxDeep);
 
+    const reducedTree = reduceToSlugAndChildren(rootNode);
+
     // 3. Sanitize e restituisci l'albero completo
-    const sanitizedTree = await this.sanitizeOutput(rootNode, ctx);
+    const sanitizedTree = await this.sanitizeOutput(reducedTree, ctx);
     return this.transformResponse(sanitizedTree);
   },
 

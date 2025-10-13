@@ -36,6 +36,11 @@
       "type": "component",
       "component": "config.data-config",
       "repeatable": false
+    },
+    "articoli": {
+      "type": "component",
+      "component": "layout.articolo",
+      "repeatable": true
     }
   }
 }

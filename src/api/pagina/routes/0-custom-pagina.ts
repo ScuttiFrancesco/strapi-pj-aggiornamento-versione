@@ -1,4 +1,4 @@
-// path: src/api/pagina/routes/0-custom-pagina.tssubtree
+// path: src/api/pagina/routes/0-custom-pagina.ts
 
 export default {
   routes: [

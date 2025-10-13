@@ -35,21 +35,6 @@
     "titolo": {
       "type": "string"
     },
-    "blocco_contenuto": {
-      "type": "dynamiczone",
-      "components": [
-        "layout.articolo",
-        "layout.titolo",
-        "config.tabella"
-      ]
-    },
-    "barra_superiore": {
-      "type": "dynamiczone",
-      "components": [
-        "layout.titolo",
-        "layout.articolo"
-      ]
-    },
     "slug": {
       "type": "uid",
       "targetField": "titolo"
@@ -59,16 +44,13 @@
       "relation": "oneToOne",
       "target": "api::pagina.pagina"
     },
-    "composizioneTitolo": {
-      "type": "customField",
-      "customField": "plugin::multi-select.multi-select",
-      "default": "[titolo]",
-      "options": [
-        "titolo",
-        "data",
-        "comune",
-        "fonte",
-        "fontePrefisso"
+    "tipoLayout": {
+      "type": "enumeration",
+      "default": "wrapper",
+      "enum": [
+        "statico",
+        "tabella",
+        "wrapper"
       ]
     }
   }

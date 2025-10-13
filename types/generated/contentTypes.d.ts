@@ -458,6 +458,7 @@ export interface ApiConfiguratoreConfiguratore
     _softDeletedAt: Schema.Attribute.DateTime & Schema.Attribute.Private;
     _softDeletedById: Schema.Attribute.Integer & Schema.Attribute.Private;
     _softDeletedByType: Schema.Attribute.String & Schema.Attribute.Private;
+    articoli: Schema.Attribute.Component<'layout.articolo', true>;
     configuratore: Schema.Attribute.Component<'config.data-config', false>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -595,18 +596,6 @@ export interface ApiPaginaPagina extends Struct.CollectionTypeSchema {
     _softDeletedAt: Schema.Attribute.DateTime & Schema.Attribute.Private;
     _softDeletedById: Schema.Attribute.Integer & Schema.Attribute.Private;
     _softDeletedByType: Schema.Attribute.String & Schema.Attribute.Private;
-    barra_superiore: Schema.Attribute.DynamicZone<
-      ['layout.titolo', 'layout.articolo']
-    >;
-    blocco_contenuto: Schema.Attribute.DynamicZone<
-      ['layout.articolo', 'layout.titolo', 'config.tabella']
-    >;
-    composizioneTitolo: Schema.Attribute.JSON &
-      Schema.Attribute.CustomField<
-        'plugin::multi-select.multi-select',
-        ['titolo', 'data', 'comune', 'fonte', 'fontePrefisso']
-      > &
-      Schema.Attribute.DefaultTo<'[titolo]'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -619,6 +608,10 @@ export interface ApiPaginaPagina extends Struct.CollectionTypeSchema {
     pagina: Schema.Attribute.Relation<'oneToOne', 'api::pagina.pagina'>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'titolo'>;
+    tipoLayout: Schema.Attribute.Enumeration<
+      ['statico', 'tabella', 'wrapper']
+    > &
+      Schema.Attribute.DefaultTo<'wrapper'>;
     titolo: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
